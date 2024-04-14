@@ -1,0 +1,220 @@
+import pandas as pd
+import random
+from datetime import datetime, timedelta
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+#load the dataset into a pandas dataframe
+csv = (r'/Users/rejanbotes/Desktop/Python Files/onlinefoods.csv')
+df = pd.read_csv(csv)
+print(df)
+
+#find the number of missing values.
+sales_missing_values = df.isnull().sum()
+print("Missing sales data per column:")
+print(sales_missing_values)
+
+#find duplicate values
+duplicate_rows = df[df.duplicated()]
+print("Duplicate rows include:")
+print(duplicate_rows)
+
+#check for duplicates in specific columns
+subset_columns = ['Age', 'Gender', 'Marital Status', 'Occupation', 'Monthly Income', 'Educational Qualifications', 'Family size', 'latitude', 'longitude', 'Pin code', 'Output', 'Feedback']
+duplicate_rows_specific = df[df.duplicated(subset=subset_columns)]
+
+print("Duplicated rows (based on subset of columns):")
+print(duplicate_rows_specific)
+
+#find the outliers using 2 methods
+numerical_columns = ['Age','Family size']
+df[numerical_columns] = df[numerical_columns].apply(pd.to_numeric, errors='coerce')
+
+# Function to detect outliers using IQR method
+def detect_outliers(df, columns):
+   outliers = pd.DataFrame()
+   for col in columns:
+       Q1 = df[col].quantile(0.25)
+       Q3 = df[col].quantile(0.75)
+       IQR = Q3 - Q1
+       lower_bound = Q1 - 1.5 * IQR
+       upper_bound = Q3 + 1.5 * IQR
+       outliers_col = df[(df[col] < lower_bound) | (df[col] > upper_bound)]
+       outliers = pd.concat([outliers, outliers_col], axis=0)
+   return outliers
+
+# Detect outliers
+outliers = detect_outliers(df, numerical_columns)
+
+# Print the outliers
+print("Outliers:")
+print(outliers)
+
+# Extract unique values from the 'educational qualifications' column
+unique_monthly_income_values = df['Monthly Income'].unique()
+
+# Print the unique values
+print("Unique Monthly Income:")
+for income in unique_monthly_income_values:
+   print(income)
+  
+# Specify the categorical columns you want to encode
+categorical_columns = ['Gender', 'Marital Status', 'Occupation', 'Educational Qualifications', 'Monthly Income']
+
+# Perform one-hot encoding using Pandas get_dummies function
+df_encoded = pd.get_dummies(df, columns=categorical_columns)
+
+# Display the encoded DataFrame
+print(df_encoded.head())
+
+# Map string values to numerical representations
+income_mapping = {'No Income': 1, 'Below Rs.10000': 2, '10001 to 25000': 4, '25001 to 50000': 5, 'More than 50000': 6}  # Adjust as per your data
+df['Monthly Income'] = df['Monthly Income'].map(income_mapping)
+
+# Create a scatter plot with the converted numerical values
+plt.figure(figsize=(8, 6))
+sns.scatterplot(data=df, x='Monthly Income', y='Age')
+plt.title('Scatter Plot of Monthly Income vs Age')
+plt.xlabel('Monthly Income')
+plt.ylabel('Age')
+plt.show()
+
+# Convert 'Monthly Income' column to categorical type
+df['Monthly Income'] = pd.Categorical(df['Monthly Income'])
+
+# Create a scatter plot with the categorical values
+plt.figure(figsize=(8, 6))
+sns.scatterplot(data=df, x='Monthly Income', y='Age')
+plt.title('Scatter Plot of Monthly Income vs Age')
+plt.xlabel('Monthly Income')
+plt.ylabel('Age')
+plt.show()
+
+# Specify the categorical columns you want to encode
+categorical_columns = ['Gender', 'Marital Status', 'Occupation', 'Educational Qualifications', 'Monthly Income']
+
+# Perform one-hot encoding using Pandas get_dummies function
+df_encoded = pd.get_dummies(df, columns=categorical_columns)
+
+# Display the encoded DataFrame
+print(df_encoded.head())
+
+df_summary = df.describe()
+mode_values = df.mode()
+
+print("summary statistcs:")
+print(df_summary)
+print("Mode values:")
+print(mode_values)
+
+# Specify the numerical columns
+numerical_columns_2 = ['Age', 'Family size']
+
+# Plot histograms for numerical variables
+df[numerical_columns_2].hist(figsize=(10, 6))
+plt.suptitle('Histograms of Numerical Variables', fontsize=16)
+
+# Plot box plots for numerical variables
+plt.figure(figsize=(10, 6))
+sns.boxplot(data=df[numerical_columns_2])
+plt.title('Box Plot of Numerical Variables', fontsize=16)
+plt.xticks(rotation=45)
+
+# Plot density plots for numerical variables
+plt.figure(figsize=(10, 6))
+for column in numerical_columns_2:
+   sns.kdeplot(df[column], label=column)
+plt.title('Density Plot of Numerical Variables', fontsize=16)
+plt.xlabel('Values')
+plt.ylabel('Density')
+plt.legend()
+plt.show()
+
+# Initialize counters for False and True values
+true_count_married = 0
+
+# Iterate through each value in the "Marital Status_Married" column
+for value in df_encoded['Marital Status_Married']:
+   if value == True:
+       true_count_married += 1
+
+# Print the total counts of False and True values
+print("Total True counts of Married customers:")
+print("Total True values:", true_count_married)
+
+# Initialize counters for False and True values
+true_count_prefer_not_to_say = 0
+
+# Iterate through each value in the "Marital Status_Married" column
+for value in df_encoded['Marital Status_Prefer not to say']:
+   if value == True:
+       true_count_prefer_not_to_say += 1
+
+# Print the total counts of False and True values
+print("Total True counts of prefer not to say customers:")
+print("Total True values:", true_count_prefer_not_to_say)
+
+# Initialize counters for False and True values
+true_count_single = 0
+
+# Iterate through each value in the "Marital Status_Married" column
+for value in df_encoded['Marital Status_Single']:
+   if value == True:
+       true_count_single += 1
+
+# Print the total counts of False and True values
+print("Total True counts of single customers:")
+print("Total True values:", true_count_single)
+
+
+# Define the list of column names for which you want to count True values
+marriage_columns_to_count = ['Marital Status_Married', 'Marital Status_Prefer not to say', 'Marital Status_Single']
+
+# Iterate through each column and count True values
+for column in marriage_columns_to_count:
+   true_count = sum(df_encoded[column])
+   total_count = len(df_encoded[column])
+   false_count = total_count - true_count
+   print(f"Total True and False counts of {column}:")
+   print(f"Total True values: {true_count}")
+   print(f"Total False values: {false_count}")
+  
+  
+columns_to_count_3 = ['Marital Status_Married', 'Marital Status_Prefer not to say', 'Marital Status_Single']
+
+# Initialize lists to store counts
+true_counts = []
+false_counts = []
+
+
+# Iterate through each column and count True values
+for column in columns_to_count_3:
+   true_count = sum(df_encoded[column])
+   total_count = len(df_encoded[column])
+   false_count = total_count - true_count
+   true_counts.append(true_count)
+   false_counts.append(false_count)
+
+
+# Create a DataFrame to store the counts
+counts_df_3 = pd.DataFrame({'True': true_counts}, index=columns_to_count_3)
+
+# Plot the bar chart
+plt.figure(figsize=(10, 6))
+counts_df_3.plot(kind='bar', stacked=True)
+plt.title('Bar Chart of True and False Counts for Marital Status Categories')
+plt.xlabel('Marital Status Categories')
+plt.ylabel('Counts')
+plt.xticks(rotation=45)
+plt.show()
+
+# Convert 'Monthly Income' column to categorical type
+df['Monthly Income'] = pd.Categorical(df['Monthly Income'])
+
+# Create a scatter plot with the categorical values
+plt.figure(figsize=(8, 6))
+sns.scatterplot(data=df, x='Monthly Income', y='Age')
+plt.title('Scatter Plot of Monthly Income vs Age')
+plt.xlabel('Monthly Income')
+plt.ylabel('Age')
+plt.show()
